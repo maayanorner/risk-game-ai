@@ -4,6 +4,8 @@ from queue import PriorityQueue
 import copy
 from node import Node
 import sys
+import  random
+EXPLAINABILITY_MODE= True
 
 class Agent:
     #TODO define agent structure and figure out how to represnt possible moves/ heuristic funtions
@@ -17,7 +19,7 @@ class Agent:
         agent_call = getattr(self,self.type)
         if agent_call:
             return agent_call(**params)
-    
+
     def get_path(self,goal_node):
         print("GOAL:",goal_node.state,goal_node.prev_action)
         path = []
@@ -25,7 +27,7 @@ class Agent:
             path.insert(0, goal_node.prev_action)
             goal_node = goal_node.parent
         return path
-    
+
     def a_star(self, reinforce_threshold=1,attack_threshold=2):
         start = timeit.default_timer()
         root = Node(self.game,self.game.state, self.player,stochastic=self.stochastic)
@@ -53,9 +55,9 @@ class Agent:
                     frontier_set.add(n)
                 else:
                     n.decrease_key(frontier.queue)
-        stop = timeit.default_timer()    
+        stop = timeit.default_timer()
         return False,stop-start,self.get_path(node)
-    
+
     def greedy(self, reinforce_threshold=1,attack_threshold=2):
         start = timeit.default_timer()
         root = Node(self.game,self.game.state, self.player,stochastic=self.stochastic)
@@ -81,7 +83,7 @@ class Agent:
                     frontier_set.add(n)
                 else:
                     n.decrease_key(frontier.queue)
-        stop = timeit.default_timer()    
+        stop = timeit.default_timer()
         return False,stop-start,self.get_path(node)
 
     def goal_test(self,node):
@@ -164,7 +166,7 @@ class Agent:
             return None, node.utility
         max_child,max_utility = None,float('-inf')
         utility=0
-        children =  node.get_neighbors(1,2)
+        children =  node.get_neighbors(1,2) #get all possible children using alpha betta pruning
         if len(children)==1 and children[0].prev_action and node.parent is None:
             children[0].calculate_utility()
             print("\nONLY CHILD TO ROOT NODE ",children[0].prev_action)
@@ -185,11 +187,43 @@ class Agent:
                 beta = max_utility
         return max_child,max_utility
 
+
+    def calculate_utility_for_all_players(self, node, phase):
+        utility_for_all_players= {}
+        for player in self.game.players:
+            state_for_player = Node(self.game, node.state, player, stochastic=self.stochastic, phase=phase)
+            state_for_player.calculate_utility()
+            utility_for_all_players[player.id]= state_for_player.utility
+        return utility_for_all_players
+
     def minimax(self,phase=0):
         start = timeit.default_timer()
         root = Node(self.game,self.game.state, self.player,stochastic=self.stochastic,phase=phase)
         root.calculate_utility()
-        child,_ = self.maximize(root,float('-inf'),float('inf'))
+        child, _ = self.maximize(root, float('-inf'), float('inf'))
+
+
+        # ----------addition for explainability ------------------------------------------------
+        import  numpy as np
+        if(EXPLAINABILITY_MODE):
+            utility_for_all_players = self.calculate_utility_for_all_players(child, phase)
+            all_utilities= {key: [utility_for_all_players[key]] for key in utility_for_all_players }
+            neighbors= root.get_neighbors(1,3)
+            for neigbor in  neighbors:
+                # child,_ = self.greedy(random.randint(0,2),random.randint(0,2))
+                utility_for_all_players= self.calculate_utility_for_all_players(neigbor, phase)
+                for key in all_utilities:
+                    all_utilities[key].append(utility_for_all_players[key])
+            player_ids= list(all_utilities.keys())
+            other_players_ids= [id for id in player_ids if id!= self.player.id]
+            correlations={}
+            for other_player in other_players_ids:
+                correlation= np.corrcoef(all_utilities[self.player.id] , all_utilities[other_player])
+                correlations[other_player]= correlation[0][1]
+
+
+
+        #------------------------------------------------------------------------------------------------------------
         prev_action = None
         if child:
             prev_action = child.prev_action
