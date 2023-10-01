@@ -205,23 +205,25 @@ class Agent:
 
         # ----------addition for explainability ------------------------------------------------
         import  numpy as np
-        if(EXPLAINABILITY_MODE):
+        all_utilities_ls = []
+        if (EXPLAINABILITY_MODE and child is not None and phase == 1):
             utility_for_all_players = self.calculate_utility_for_all_players(child, phase)
-            all_utilities= {key: [utility_for_all_players[key]] for key in utility_for_all_players }
-            neighbors= root.get_neighbors(1,3)
-            for neigbor in  neighbors:
+            all_utilities = {key: [utility_for_all_players[key]] for key in utility_for_all_players }
+            neighbors = root.get_neighbors(1,3)
+            for neigbor in neighbors:
                 # child,_ = self.greedy(random.randint(0,2),random.randint(0,2))
-                utility_for_all_players= self.calculate_utility_for_all_players(neigbor, phase)
+                utility_for_all_players = self.calculate_utility_for_all_players(neigbor, phase)
                 for key in all_utilities:
                     all_utilities[key].append(utility_for_all_players[key])
-            player_ids= list(all_utilities.keys())
-            other_players_ids= [id for id in player_ids if id!= self.player.id]
-            correlations={}
+            player_ids = list(all_utilities.keys())
+            other_players_ids = [id for id in player_ids if id != self.player.id]
+            correlations = {}
             for other_player in other_players_ids:
-                correlation= np.corrcoef(all_utilities[self.player.id] , all_utilities[other_player])
-                correlations[other_player]= correlation[0][1]
+                correlation = np.corrcoef(all_utilities[self.player.id], all_utilities[other_player])
+                correlations[other_player] = correlation[0][1]
 
-
+            all_utilities_ls.append(all_utilities)
+            print(correlations)
 
         #------------------------------------------------------------------------------------------------------------
         prev_action = None
