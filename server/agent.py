@@ -14,6 +14,7 @@ class Agent:
         self.game = game
         self.player = player
         self.stochastic = stochastic
+        self.all_utilities_ls = []
 
     def run(self,params={}):
         agent_call = getattr(self,self.type)
@@ -201,11 +202,10 @@ class Agent:
         root = Node(self.game,self.game.state, self.player,stochastic=self.stochastic,phase=phase)
         root.calculate_utility()
         child, _ = self.maximize(root, float('-inf'), float('inf'))
-
-
+    
         # ----------addition for explainability ------------------------------------------------
         import  numpy as np
-        all_utilities_ls = []
+        #  and phase == 1
         if (EXPLAINABILITY_MODE and child is not None and phase == 1):
             utility_for_all_players = self.calculate_utility_for_all_players(child, phase)
             all_utilities = {key: [utility_for_all_players[key]] for key in utility_for_all_players }
@@ -222,9 +222,8 @@ class Agent:
                 correlation = np.corrcoef(all_utilities[self.player.id], all_utilities[other_player])
                 correlations[other_player] = correlation[0][1]
 
-            all_utilities_ls.append(all_utilities)
+            self.all_utilities_ls.append(all_utilities)
             print(correlations)
-
         #------------------------------------------------------------------------------------------------------------
         prev_action = None
         if child:
