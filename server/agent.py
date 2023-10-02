@@ -192,6 +192,8 @@ class Agent:
     def calculate_utility_for_all_players(self, node, phase):
         utility_for_all_players= {}
         for player in self.game.players:
+            if player is None:
+                continue
             state_for_player = Node(self.game, node.state, player, stochastic=self.stochastic, phase=phase)
             state_for_player.calculate_utility()
             utility_for_all_players[player.id]= state_for_player.utility
