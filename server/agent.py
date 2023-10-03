@@ -208,7 +208,7 @@ class Agent:
         # ----------addition for explainability ------------------------------------------------
         import  numpy as np
         #  and phase == 1
-        if (EXPLAINABILITY_MODE and child is not None and phase == 1):
+        if (EXPLAINABILITY_MODE and child is not None):
             utility_for_all_players = self.calculate_utility_for_all_players(child, phase)
             all_utilities = {key: [utility_for_all_players[key]] for key in utility_for_all_players }
             neighbors = root.get_neighbors(1,3)
